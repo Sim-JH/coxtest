@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+    module:
+        privileged: true
+        restart: always
+        image: coxtest-module
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: coxtest-module
+        volumes:
+            - $PWD/coxtest:/src/module/coxtest
+        environment:
+            - WEB_HOST=0.0.0.0
+            - WEB_PORT=5000
+        command: sleep infinity
+        ports:
+            - 5000:5000
+        networks:
+            - coxtest_network
+        depends_on:
+            redis:
+                condition: service_healthy
+    redis:
+        restart: always
+        image: coxtest-redis
+        build:
+            context: docker/redis
+            dockerfile: Dockerfile
+        container_name: coxtest-redis
+        ports:
+            - 6379:6379
+        env_file:
+            - docker/env/redis.env
+        networks:
+            - coxtest_network
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+
+networks:
+  coxtest_network:
+    driver: bridge
